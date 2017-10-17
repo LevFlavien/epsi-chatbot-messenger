@@ -1,41 +1,43 @@
 package app;
 
-import com.github.messenger4j.MessengerPlatform;
-import com.github.messenger4j.exceptions.MessengerApiException;
-import com.github.messenger4j.exceptions.MessengerIOException;
-import com.github.messenger4j.exceptions.MessengerVerificationException;
-import com.github.messenger4j.receive.MessengerReceiveClient;
-import com.github.messenger4j.receive.events.AccountLinkingEvent;
-import com.github.messenger4j.receive.handlers.*;
-import com.github.messenger4j.send.*;
-import com.github.messenger4j.send.buttons.Button;
-import com.github.messenger4j.send.templates.GenericTemplate;
-import com.github.messenger4j.user.UserProfile;
-import com.github.messenger4j.user.UserProfileClient;
+import java.io.DataOutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Date;
+import java.util.List;
 
-import app.search.SearchResult;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.stream.Collectors;
-
-import javax.net.ssl.HttpsURLConnection;
+import com.github.messenger4j.MessengerPlatform;
+import com.github.messenger4j.exceptions.MessengerApiException;
+import com.github.messenger4j.exceptions.MessengerIOException;
+import com.github.messenger4j.exceptions.MessengerVerificationException;
+import com.github.messenger4j.receive.MessengerReceiveClient;
+import com.github.messenger4j.receive.events.AccountLinkingEvent;
+import com.github.messenger4j.receive.handlers.AccountLinkingEventHandler;
+import com.github.messenger4j.receive.handlers.EchoMessageEventHandler;
+import com.github.messenger4j.receive.handlers.FallbackEventHandler;
+import com.github.messenger4j.receive.handlers.MessageDeliveredEventHandler;
+import com.github.messenger4j.receive.handlers.MessageReadEventHandler;
+import com.github.messenger4j.receive.handlers.OptInEventHandler;
+import com.github.messenger4j.receive.handlers.TextMessageEventHandler;
+import com.github.messenger4j.send.MessengerSendClient;
+import com.github.messenger4j.send.NotificationType;
+import com.github.messenger4j.send.Recipient;
+import com.github.messenger4j.send.SenderAction;
+import com.github.messenger4j.user.UserProfile;
+import com.github.messenger4j.user.UserProfileClient;
 
 
 /**
@@ -193,22 +195,6 @@ public class CallBackHandler {
 		this.sendClient.sendSenderAction(recipientId, SenderAction.TYPING_OFF);
 	}
 
-	private PostbackEventHandler newPostbackEventHandler() {
-		return event -> {
-			logger.debug("Received PostbackEvent: {}", event);
-
-			final String senderId = event.getSender().getId();
-			final String recipientId = event.getRecipient().getId();
-			final String payload = event.getPayload();
-			final Date timestamp = event.getTimestamp();
-
-			logger.info("Received postback for user '{}' and page '{}' with payload '{}' at '{}'", senderId,
-					recipientId, payload, timestamp);
-
-			sendTextMessage(senderId, "Postback called");
-		};
-	}
-
 	private AccountLinkingEventHandler newAccountLinkingEventHandler() {
 		return event -> {
 			logger.debug("Received AccountLinkingEvent: {}", event);
@@ -311,10 +297,6 @@ public class CallBackHandler {
 	private void handleSendException(Exception e) {
 		logger.error("Message could not be sent. An unexpected error occurred.", e);
 	}
-
-	private void handleIOException(Exception e) {
-		logger.error("Could not open Spring.io page. An unexpected error occurred.", e);
-	}
 	
 	private void sendPostUser(String id, String nom, String prenom) throws Exception {
 
@@ -337,9 +319,9 @@ public class CallBackHandler {
 		wr.close();
 
 		int responseCode = con.getResponseCode();
-		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("Post parameters : " + urlParameters);
-		System.out.println("Response Code : " + responseCode);
+		logger.info("\nSending 'POST' request to URL : " + url);
+		logger.info("Post parameters : " + urlParameters);
+		logger.info("Response Code : " + responseCode);
 
 	}
 	
@@ -364,9 +346,9 @@ public class CallBackHandler {
 		wr.close();
 
 		int responseCode = con.getResponseCode();
-		System.out.println("\nSending 'POST' request to URL : " + url);
-		System.out.println("Post parameters : " + urlParameters);
-		System.out.println("Response Code : " + responseCode);
+		logger.info("\nSending 'POST' request to URL : " + url);
+		logger.info("Post parameters : " + urlParameters);
+		logger.info("Response Code : " + responseCode);
 
 	}
 }
