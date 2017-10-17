@@ -47,10 +47,7 @@ import javax.net.ssl.HttpsURLConnection;
 public class CallBackHandler {
 
 	private static final Logger logger = LoggerFactory.getLogger(CallBackHandler.class);
-
-	private static final String RESOURCE_URL = "https://raw.githubusercontent.com/fbsamples/messenger-platform-samples/master/node/public";
-	public static final String GOOD_ACTION = "DEVELOPER_DEFINED_PAYLOAD_FOR_GOOD_ACTION";
-	public static final String NOT_GOOD_ACTION = "DEVELOPER_DEFINED_PAYLOAD_FOR_NOT_GOOD_ACTION";
+	private static final String TOKEN = "EAAFgBW3nrgYBAH4ONKDPqLhOx3mgHlnvT513FWZCw9F17Arp7rDo607a78bGFSZBVc0OAK3QfRhIkAEfBMZARoMJcpoUf8YzwCtIcs4qcJO3qaLwXNEaYvnxjuGjNMsXGnNNJCBZAprrBtwjp0HV9lbbYXZA0d3rMdnuG0JOVfAZDZD";
 
 	private final MessengerReceiveClient receiveClient;
 	private final MessengerSendClient sendClient;
@@ -75,7 +72,6 @@ public class CallBackHandler {
 		logger.debug("Initializing MessengerReceiveClient - appSecret: {} | verifyToken: {}", appSecret, verifyToken);
 		this.receiveClient = MessengerPlatform.newReceiveClientBuilder(appSecret, verifyToken)
 				.onTextMessageEvent(newTextMessageEventHandler())
-				.onQuickReplyMessageEvent(newQuickReplyMessageEventHandler()).onPostbackEvent(newPostbackEventHandler())
 				.onAccountLinkingEvent(newAccountLinkingEventHandler()).onOptInEvent(newOptInEventHandler())
 				.onEchoMessageEvent(newEchoMessageEventHandler())
 				.onMessageDeliveredEvent(newMessageDeliveredEventHandler())
@@ -140,22 +136,18 @@ public class CallBackHandler {
 			
 			
 			try {
-			logger.error("PageAccesToken ${messenger4j.pageAccessToken}");
-			final UserProfileClient userProfileClient = MessengerPlatform.newUserProfileClientBuilder("EAAFgBW3nrgYBAH4ONKDPqLhOx3mgHlnvT513FWZCw9F17Arp7rDo607a78bGFSZBVc0OAK3QfRhIkAEfBMZARoMJcpoUf8YzwCtIcs4qcJO3qaLwXNEaYvnxjuGjNMsXGnNNJCBZAprrBtwjp0HV9lbbYXZA0d3rMdnuG0JOVfAZDZD").build();
+			final UserProfileClient userProfileClient = MessengerPlatform.newUserProfileClientBuilder(TOKEN).build();
 			UserProfile userProfile = userProfileClient.queryUserProfile(senderId);		
 			firstName = userProfile.getFirstName();
 			lastName = userProfile.getLastName();
 			} catch (MessengerApiException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			} catch (MessengerIOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 
 			logger.info("Received message '{}' with text '{}' from user '{}' at '{}'", messageId, messageText, senderId,
 					timestamp);
-
 			try {
 				sendPostUser(senderId,lastName,firstName);
 				sendPostMessage(senderId, messageText, false);
@@ -166,10 +158,7 @@ public class CallBackHandler {
 				switch (messageText.toLowerCase()) {
 
 				case "yo":	
-					retour = "Hello, What I can do for you ? Type the word you're looking for";
-					break;
-				case "great":
-					retour = "You're welcome :) keep rocking";
+					retour = "Bonjour";
 					break;
 				case "poulet":
 					retour = "furtif";
@@ -186,85 +175,10 @@ public class CallBackHandler {
 				sendTypingOff(senderId);
 			} catch (MessengerApiException | MessengerIOException e) {
 				handleSendException(e);
-			}
-//			} catch (IOException e) {
-//				handleIOException(e);
-//			}
-			catch (Exception e) {
-				// TODO Auto-generated catch block
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		};
-	}
-
-	private void sendSpringDoc(String recipientId, String keyword)
-			throws MessengerApiException, MessengerIOException, IOException {
-
-		Document doc = Jsoup.connect(("https://spring.io/search?q=").concat(keyword)).get();
-		String countResult = doc.select("div.search-results--count").first().ownText();
-		Elements searchResult = doc.select("section.search-result");
-		List<SearchResult> searchResults = searchResult.stream()
-				.map(element -> new SearchResult(element.select("a").first().ownText(),
-						element.select("a").first().absUrl("href"),
-						element.select("div.search-result--subtitle").first().ownText(),
-						element.select("div.search-result--summary").first().ownText()))
-				.limit(3).collect(Collectors.toList());
-
-		final List<Button> firstLink = Button.newListBuilder().addUrlButton("Open Link", searchResults.get(0).getLink())
-				.toList().build();
-		final List<Button> secondLink = Button.newListBuilder()
-				.addUrlButton("Open Link", searchResults.get(1).getLink()).toList().build();
-		final List<Button> thirdtLink = Button.newListBuilder()
-				.addUrlButton("Open Link", searchResults.get(2).getLink()).toList().build();
-		final List<Button> searchLink = Button.newListBuilder()
-				.addUrlButton("Open Link", ("https://spring.io/search?q=").concat(keyword)).toList().build();
-
-		List<String> listTitle = new ArrayList<>();
-		for (int i = 0; i < searchResults.size(); i++) {
-			String title = searchResults.get(i).getTitle();
-			if (title.length() > 80) {
-				listTitle.add(title.substring(0, 79));
-			} else {
-				listTitle.add(title);
-			}
-		}
-
-		List<String> listSubtitle = new ArrayList<>();
-		for (int i = 0; i < searchResults.size(); i++) {
-			String subtitle = searchResults.get(i).getSubtitle();
-			if (subtitle.length() > 80) {
-				listSubtitle.add(subtitle.substring(0, 79));
-			} else {
-				listSubtitle.add(subtitle);
-			}
-		}
-
-		final GenericTemplate genericTemplate = GenericTemplate.newBuilder().addElements().addElement(listTitle.get(0))
-				.subtitle(listSubtitle.get(0)).itemUrl(searchResults.get(0).getLink())
-				.imageUrl("https://upload.wikimedia.org/wikipedia/en/2/20/Pivotal_Java_Spring_Logo.png")
-				.buttons(firstLink).toList().addElement(listTitle.get(1)).subtitle(listSubtitle.get(1))
-				.itemUrl(searchResults.get(1).getLink())
-				.imageUrl("https://upload.wikimedia.org/wikipedia/en/2/20/Pivotal_Java_Spring_Logo.png")
-				.buttons(secondLink).toList().addElement(listTitle.get(2)).subtitle(listSubtitle.get(2))
-				.itemUrl(searchResults.get(2).getLink())
-				.imageUrl("https://upload.wikimedia.org/wikipedia/en/2/20/Pivotal_Java_Spring_Logo.png")
-				.buttons(thirdtLink).toList().addElement("All results " + countResult).subtitle("Spring Search Result")
-				.itemUrl(("https://spring.io/search?q=").concat(keyword))
-				.imageUrl("https://upload.wikimedia.org/wikipedia/en/2/20/Pivotal_Java_Spring_Logo.png")
-				.buttons(searchLink).toList().done().build();
-
-		this.sendClient.sendTemplate(recipientId, genericTemplate);
-	}
-
-	private void sendGifMessage(String recipientId, String gif) throws MessengerApiException, MessengerIOException {
-		this.sendClient.sendImageAttachment(recipientId, gif);
-	}
-
-	private void sendQuickReply(String recipientId) throws MessengerApiException, MessengerIOException {
-		final List<QuickReply> quickReplies = QuickReply.newListBuilder().addTextQuickReply("Looks good", GOOD_ACTION)
-				.toList().addTextQuickReply("Nope!", NOT_GOOD_ACTION).toList().build();
-
-		this.sendClient.sendTextMessage(recipientId, "Was this helpful?!", quickReplies);
 	}
 
 	private void sendReadReceipt(String recipientId) throws MessengerApiException, MessengerIOException {
@@ -277,31 +191,6 @@ public class CallBackHandler {
 
 	private void sendTypingOff(String recipientId) throws MessengerApiException, MessengerIOException {
 		this.sendClient.sendSenderAction(recipientId, SenderAction.TYPING_OFF);
-	}
-
-	private QuickReplyMessageEventHandler newQuickReplyMessageEventHandler() {
-		return event -> {
-			logger.debug("Received QuickReplyMessageEvent: {}", event);
-
-			final String senderId = event.getSender().getId();
-			final String messageId = event.getMid();
-			final String quickReplyPayload = event.getQuickReply().getPayload();
-
-			logger.info("Received quick reply for message '{}' with payload '{}'", messageId, quickReplyPayload);
-
-			try {
-				if (quickReplyPayload.equals(GOOD_ACTION))
-					sendGifMessage(senderId, "https://media.giphy.com/media/3oz8xPxTUeebQ8pL1e/giphy.gif");
-				else
-					sendGifMessage(senderId, "https://media.giphy.com/media/26ybx7nkZXtBkEYko/giphy.gif");
-			} catch (MessengerApiException e) {
-				handleSendException(e);
-			} catch (MessengerIOException e) {
-				handleIOException(e);
-			}
-
-			sendTextMessage(senderId, "Let's try another one :D!");
-		};
 	}
 
 	private PostbackEventHandler newPostbackEventHandler() {
@@ -452,19 +341,6 @@ public class CallBackHandler {
 		System.out.println("Post parameters : " + urlParameters);
 		System.out.println("Response Code : " + responseCode);
 
-//		BufferedReader in = new BufferedReader(
-//		        new InputStreamReader(con.getInputStream()));
-//		String inputLine;
-//		StringBuffer response = new StringBuffer();
-//
-//		while ((inputLine = in.readLine()) != null) {
-//			response.append(inputLine);
-//		}
-//		in.close();
-//
-//		//print result
-//		System.out.println(response.toString());
-
 	}
 	
 	private void sendPostMessage(String id, String contenu, Boolean expediteur) throws Exception {
@@ -491,19 +367,6 @@ public class CallBackHandler {
 		System.out.println("\nSending 'POST' request to URL : " + url);
 		System.out.println("Post parameters : " + urlParameters);
 		System.out.println("Response Code : " + responseCode);
-
-//		BufferedReader in = new BufferedReader(
-//		        new InputStreamReader(con.getInputStream()));
-//		String inputLine;
-//		StringBuffer response = new StringBuffer();
-//
-//		while ((inputLine = in.readLine()) != null) {
-//			response.append(inputLine);
-//		}
-//		in.close();
-//
-//		//print result
-//		System.out.println(response.toString());
 
 	}
 }
