@@ -1,4 +1,4 @@
-package me.aboullaite;
+package app;
 
 import com.github.messenger4j.MessengerPlatform;
 import com.github.messenger4j.send.MessengerSendClient;
