@@ -2,6 +2,8 @@ messenger4j:
   appSecret: 'a9cd70cef11b5f86ed15717a37687288'
   verifyToken: 'randomlygeneratedstring'
   pageAccessToken: 'EAAFgBW3nrgYBAH4ONKDPqLhOx3mgHlnvT513FWZCw9F17Arp7rDo607a78bGFSZBVc0OAK3QfRhIkAEfBMZARoMJcpoUf8YzwCtIcs4qcJO3qaLwXNEaYvnxjuGjNMsXGnNNJCBZAprrBtwjp0HV9lbbYXZA0d3rMdnuG0JOVfAZDZD'
+  mailUsername: '3d7337eadcd55d'
+  mailPassword: '40db31d19fa8b6'
 
 logging:
   level: 

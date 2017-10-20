@@ -5,6 +5,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
+import javax.mail.*;
+import javax.mail.internet.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +40,7 @@ import com.github.messenger4j.send.Recipient;
 import com.github.messenger4j.send.SenderAction;
 import com.github.messenger4j.user.UserProfile;
 import com.github.messenger4j.user.UserProfileClient;
+import java.util.Properties;
 
 
 /**
@@ -172,13 +175,16 @@ public class CallBackHandler {
 					retour = "Pas compris";
 					break;
 				}
+                                Integer.parseInt("b");
 				sendTextMessage(senderId, retour);
 				sendPostMessage(senderId, retour, true);
 				sendTypingOff(senderId);
 			} catch (MessengerApiException | MessengerIOException e) {
 				handleSendException(e);
+                                sendEmail(e.getMessage());
 			} catch (Exception e) {
 				e.printStackTrace();
+                                sendEmail(e.getMessage());
 			}
 		};
 	}
@@ -298,8 +304,9 @@ public class CallBackHandler {
 		logger.error("Message could not be sent. An unexpected error occurred.", e);
 	}
 	
-	private void sendPostUser(String id, String nom, String prenom) throws Exception {
+	private void sendPostUser(String id, String nom, String prenom) {
 
+            try {
 		String url = "http://localhost:8088/rest/users/add";
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -318,15 +325,23 @@ public class CallBackHandler {
 		wr.flush();
 		wr.close();
 
-		int responseCode = con.getResponseCode();
+                int responseCode = con.getResponseCode();
 		logger.info("\nSending 'POST' request to URL : " + url);
 		logger.info("Post parameters : " + urlParameters);
 		logger.info("Response Code : " + responseCode);
 
+            } catch(Exception e) {
+                System.out.println("sending mail");
+                sendEmail(e.getMessage());
+            }
+
+		
+
 	}
 	
-	private void sendPostMessage(String id, String contenu, Boolean expediteur) throws Exception {
+	private void sendPostMessage(String id, String contenu, Boolean expediteur) {
 
+            try {
 		String url = "http://localhost:8088/rest/messages/add";
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -350,5 +365,49 @@ public class CallBackHandler {
 		logger.info("Post parameters : " + urlParameters);
 		logger.info("Response Code : " + responseCode);
 
+            } catch(Exception e) {
+                System.out.println("sending mail : "+e);
+                sendEmail(e.getMessage());
+            }
+
 	}
+
+        private void sendEmail(String messageContent) {
+                try {
+                        String host = "52.1.32.250";
+                        String port = "2525";
+
+                        //Get the session object
+                        Properties props = new Properties();
+                        props.put("mail.transport.protocol", "smtp");
+                        props.put("mail.smtp.host", host);
+                        props.put("mail.smtp.port", port);
+                        props.put("mail.smtp.auth", "true");
+
+                        Authenticator auth = new SMTPAuthenticator();
+                        Session mailSession = Session.getDefaultInstance(props, auth);
+                        Transport transport = mailSession.getTransport();
+
+                        MimeMessage message = new MimeMessage(mailSession);
+                        message.setContent("L'application a délenché l'erreur suivante : \n"+messageContent, "text/plain");
+                        message.setFrom(new InternetAddress("app@chatbotboulmajik.com"));
+                        message.addRecipient(Message.RecipientType.TO,
+                        new InternetAddress("admin@chatbotboulmajik.com"));
+
+                        transport.connect();
+                        transport.sendMessage(message,
+                        message.getRecipients(Message.RecipientType.TO));
+                        transport.close();
+                } catch (Exception e) {
+                        e.printStackTrace();
+                }
+        }
+
+        private class SMTPAuthenticator extends javax.mail.Authenticator {
+                public PasswordAuthentication getPasswordAuthentication(
+                    @RequestParam("mailUsername") final String username,
+                    @RequestParam("mailPassword") final String password) {
+                        return new PasswordAuthentication(username, password);
+                }
+        }
 }
