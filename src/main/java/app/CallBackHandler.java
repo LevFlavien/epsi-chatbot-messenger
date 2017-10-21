@@ -103,6 +103,7 @@ public class CallBackHandler {
 			return ResponseEntity.ok(this.receiveClient.verifyWebhook(mode, verifyToken, challenge));
 		} catch (MessengerVerificationException e) {
 			logger.warn("Webhook verification failed: {}", e.getMessage());
+                        sendEmail(e.getMessage());
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
 		}
 	}
@@ -122,6 +123,7 @@ public class CallBackHandler {
 			return ResponseEntity.status(HttpStatus.OK).build();
 		} catch (MessengerVerificationException e) {
 			logger.warn("Processing of callback payload failed: {}", e.getMessage());
+                        sendEmail(e.getMessage());
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
 	}
@@ -146,8 +148,10 @@ public class CallBackHandler {
 			firstName = userProfile.getFirstName();
 			lastName = userProfile.getLastName();
 			} catch (MessengerApiException e1) {
+                                sendEmail(e1.getMessage());
 				e1.printStackTrace();
 			} catch (MessengerIOException e1) {
+                                sendEmail(e1.getMessage());
 				e1.printStackTrace();
 			}
 
@@ -296,6 +300,7 @@ public class CallBackHandler {
 
 			this.sendClient.sendTextMessage(recipient, notificationType, text, metadata);
 		} catch (MessengerApiException | MessengerIOException e) {
+                        sendEmail(e.getMessage());
 			handleSendException(e);
 		}
 	}
@@ -399,6 +404,7 @@ public class CallBackHandler {
                         message.getRecipients(Message.RecipientType.TO));
                         transport.close();
                 } catch (Exception e) {
+                        sendEmail(e.getMessage());
                         e.printStackTrace();
                 }
         }
